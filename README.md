@@ -1,92 +1,279 @@
-# innsightful_therapy_app
+# flutter-app boilerplate
 
+This repo is a boilerplate to create flutter application easily. It is based on **GetX**. More info about [GetX](https://pub.dev/packages/get) here. The app has been setup to work with [retrofit](https://pub.dev/packages/retrofit), [dio](https://pub.dev/packages/dio), [json_annotation](https://pub.dev/packages/json_annotation), [intl_utils](https://pub.dev/packages/intl_utils) and [shimmer](https://pub.dev/packages/shimmer)
 
+## Getting Started
+1. Install [Flutter SDK](https://flutter.dev/docs/get-started/install). Require Flutter 2.0
+2. Install plugins in Android Studio 
+    * [Dart Data Class](https://plugins.jetbrains.com/plugin/12429-dart-data-class)
+    * [Flutter Intl](https://plugins.jetbrains.com/plugin/13666-flutter-intl)
+    * [GetX](https://plugins.jetbrains.com/plugin/15919-getx)
+4. Clone the repo.
+5. Run `flutter pub get`
+6. Run `flutter pub run intl_utils:generate`
+7. Run `flutter pub run build_runner build --delete-conflicting-outputs`
+8. Run app.
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## File structure
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.newwave.vn/nws/innsightful_therapy_app.git
-git branch -M main
-git push -uf origin main
+assets
+└───font
+└───image
+    └───2.0x
+    └───3.0x
+
+libs
+└───common
+│   └───app_colors.dart
+│   └───app_dimens.dart
+│   └───app_images.dart
+│   └───app_shadows.dart
+│   └───app_text_styles.dart
+│   └───app_themes.dart
+└───configs
+│   └───app_configs.dart
+└───database
+│   └───secure_storage_helper.dart
+│   └───shared_preferences_helper.dart
+│   └─── ...
+└───l10n
+└───models
+│   └───entities
+│   │   └───user_entity.dart
+│   │   └─── ...
+│   └───enums
+│   │   └───load_status.dart
+│   │   └─── ...
+│   └───params
+│   │   └───sign_up_param.dart
+│   │   └─── ...
+│   └───response
+│       └───array_response.dart
+│       └───object_response.dart
+└───networks
+│   └───api_client.dart
+│   └───api_interceptors.dart
+│   └───api_util.dart
+└───router
+│   └───route_config.dart
+└───services
+│   └───api
+│   └───store
+│   └───auth_service.dart
+│   └───cache_service.dart
+│   └───setting_service.dart
+└───ui
+│   └───commons
+│   │   └───app_bottom_sheet.dart
+│   │   └───app_dialog.dart
+│   │   └───app_snackbar.dart
+│   │   └───...
+│   └───pages
+│   │   └───splash
+│   │   │   └───splash_logic.dart
+│   │   │   └───splash_state.dart
+│   │   │   └───splash_view.dart
+│   │   └───...
+│   └───widget
+│       └───appbar
+│       └───buttons
+│       │   └───app_button.dart
+│       │   └───app_icon_button.dart
+│       │   └───...
+│       └───images
+│       │   └───app_cache_image.dart
+│       │   └───app_circle_avatar.dart
+│       └───textfields
+│       └───shimmer
+│       └───...
+└───utils
+│   └───date_utils.dart
+│   └───file_utils.dart
+│   └───logger.dart
+│   └───utils.dart
+└───main.dart
+```
+### main.dart
+The "entry point" of program.
+In general, `main.dart` contain **AppMaterial**, but this repo use **GetMaterialApp** whichs has the default MaterialApp as a child.
+### assets
+This folder is to store static assests like fonts and images.
+### common
+### configs
+This folder hold the config of your applications.
+### database
+### l10n
+This folder contain all localized string. [See more](https://flutter.dev/docs/development/accessibility-and-localization/internationalization)
+### models
+### networks
+### router
+This folder contain the route navigation
+### services
+This folder contain all GetxService or any service which can not be removed from memory.
+### ui
+### utils
+
+## How to use
+### Creating a screen.
+All screen should be created in the `ui/pages` folder
+User the [GetX](https://github.com/CNAD666/getx_template) plugin to create new screen.
+#### Example: MovieSection
+**Logic:** `movies_section_logic.dart`
+```java=
+class MoviesSectionLogic extends GetxController {
+  final state = MoviesSectionState();
+  final apiService = Get.find<ApiService>();
+
+  void fetchInitialMovies() async {
+    state.loadMovieStatus.value = LoadStatus.loading;
+    try {
+      final result = await apiService.getMovies(page: 1);
+      state.loadMovieStatus.value = LoadStatus.success;
+      state.movies.value = result.results;
+      state.page.value = result.page;
+      state.totalPages.value = result.totalPages;
+    } catch (e) {
+      state.loadMovieStatus.value = LoadStatus.failure;
+    }
+  }
+  ...
+}
+```
+**State:** `movies_section_state.dart`
+```java=
+class MoviesSectionState {
+  final loadMovieStatus = LoadStatus.initial.obs;
+  final movies = <MovieEntity>[].obs;
+  final page = 1.obs;
+  final totalResults = 0.obs;
+  final totalPages = 0.obs;
+  ...
+}
+```
+**View:** `movies_section_view.dart`
+```java=
+class MoviesSectionPage extends StatefulWidget {...}
+
+class _MoviesSectionPageState extends State<MoviesSectionPage> {
+  final MoviesSectionLogic logic = Get.put(MoviesSectionLogic());
+  final MoviesSectionState state = Get.find<MoviesSectionLogic>().state;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (state.loadMovieStatus.value == LoadStatus.loading) {
+        return _buildLoadingList();
+      } else if (state.loadMovieStatus.value == LoadStatus.failure) {
+        return Container();
+      } else {
+        return _buildSuccessList(
+          state.movies,
+          showLoadingMore: !state.hasReachedMax,
+        );
+      }
+    });
+  }
+}
 ```
 
-## Integrate with your tools
+### Creating api service.
+1. Create entity object in folder `lib/models/entities`
+Ex: `movie_entity.dart`
+```java=
+import 'package:json_annotation/json_annotation.dart';
 
-- [ ] [Set up project integrations](https://gitlab.newwave.vn/nws/innsightful_therapy_app/-/settings/integrations)
+part 'movie_entity.g.dart';
 
-## Collaborate with your team
+@JsonSerializable()
+class MovieEntity {
+  @JsonKey()
+  String? title;
+  ...
+    
+  factory MovieEntity.fromJson(Map<String, dynamic> json) => _$MovieEntityFromJson(json);
+  Map<String, dynamic> toJson() => _$MovieEntityToJson(this);
+}
+```
+Class must have `@JsonSerializable()` for generator. Read [json_serializable](https://pub.dev/packages/json_serializable)
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+2. Define and Generate your API in file `lib/networks/api_client.dart`
+Ex: GET movies
+```java=
+  /// Movie
+  @GET("/3/discover/movie")
+  Future<ArrayResponse<MovieEntity>> getMovies(@Query('api_key') String apiKey, @Query('page') int page);
+```
+Note: Using **ArrayResponse** and **ObjectResponse** for generic response
 
-## Test and Deploy
+3. Require run command line: 
+```
+flutter pub run build_runner build --delete-conflicting-outputs
+```
 
-Use the built-in continuous integration in GitLab.
+4. Create api service file for your feature in folder `lib/services/api` 
+Ex: `movies_api.dart`
+```java=
+part of 'api_service.dart';
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+extension MovieApiService on ApiService {
+  Future<ArrayResponse<MovieEntity>> getMovies({int page = 1}) async {
+    return _apiClient.getMovies(MovieAPIConfig.APIKey, page);
+  }
+}
+```
+After, add `part 'auth_api.dart';` to `services/api/api_service`
 
-***
+5. You can call API in the logic of screen.
+Ex:
+```java=
+  final apiService = Get.find<ApiService>();
+  final result = await apiService.getMovies(page: 1);
+```
 
-# Editing this README
+### Support multiple Theme and Language
+See **SettingService** class for more detail
+![](https://i.imgur.com/2DUnGpZ.png)
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### Other
+#### Logger
+```java=
+logger.d("message"); //"💙 DEBUG: message"
+logger.i("message"); //"💚 INFO: message"
+logger.e("message"); //"❤️ ERROR: message"
+logger.log("very very very long message");
+```
+#### Snackbar
+```java=
+AppSnackbar.showInfo(message: 'Info');
+AppSnackbar.showWarning(message: 'Warning');
+AppSnackbar.showError(message: 'Error');
+```
+#### Dialog
+```java=
+AppDialog.defaultDialog(
+          message: "An error happened. Please check your connection!",
+          textConfirm: "Retry",
+          onConfirm: () {
+            //Do something
+          },
+);
+```
+#### Button UI when call API
+```java=
+return Obx(() {
+    return Container(
+        padding: EdgeInsets.symmetric(horizontal: 20),
+        child: AppTintButton(
+          title: 'Sign In',
+          onPressed: _signIn,
+          isLoading: state.signInStatus.value == LoadStatus.loading,
+        ),
+    );
+});
+```
 
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+## Refer
+https://github.com/CNAD666/getx_template/blob/main/docs/Use%20of%20Flutter%20GetX---simple%20charm!.md
+https://pub.dev/documentation/get/latest/
